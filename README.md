@@ -2,7 +2,7 @@
 
 ## Do que se trata o projeto?
 
-A idéia deste projeto é que, através do emprego de IoT, possamos criar um semáforo inteligente que proporcione melhor acessibilidade a pessoas com deficiência visual — perda total/parcial de visão ou daltonismo — ou deficiência auditiva.
+A idéia deste projeto é que, através do emprego de IoT, possamos criar um semáforo inteligente que proporcione melhor acessibilidade a pessoas com deficiências visuais — perda total/parcial de visão ou daltonismo —, auditivas ou de mobilidade.
 
 ## Como esperamos alcançar este objetivo?
 
