@@ -1,30 +1,14 @@
 #include <Adafruit_LiquidCrystal.h>
 
 Adafruit_LiquidCrystal lcd(0);
-
-int aut_vermelho = 2;
-int aut_amarelo = 3;
-int aut_verde = 4;
-
-int ped_vermelho = 5;
-int ped_verde = 6;
-
-int buzzer = 7;
-int botao = 8;
-
 int tempoAbertura = 10000;
 unsigned long timerInterno;
   
-void setup()
-{
+void setup(){
   timerInterno = millis();
-  
-  for (int i = 2; i < 8; i++) 
-  {   
-    pinMode(i, OUTPUT);
-  }
-  
-  pinMode(8, INPUT);
+ 
+  DDRD = 0xFC;
+  DDRB = 0x3E;
   
   lcd.begin(16, 2);
   lcd.print("Grupo 4");
@@ -38,71 +22,51 @@ void setup()
   delay(1000);
   lcd.clear();
   
-  digitalWrite(aut_vermelho,LOW);
-  digitalWrite(aut_amarelo,LOW);
-  digitalWrite(aut_verde,HIGH);
-  digitalWrite(ped_vermelho,HIGH);
-  digitalWrite(ped_verde,LOW);
-  
-  // ...e o status é refletido na tela
+  PORTD = 0x30;
   lcd.print("A: verde");
   lcd.setCursor(0,1);
   lcd.print("P: vermelho");
 }
 
-void loop()
-{
-  int statusBotao = digitalRead(botao);
+void loop(){
+  int statusBotao = digitalRead(8);
   delay(50);
   
-  if(statusBotao == HIGH && (millis() - timerInterno) > 5000)
-  {
+  if(statusBotao == HIGH && (millis() - timerInterno) > 5000){
   	lcd.setCursor(0,0);
     lcd.clear();
     alteraLuzes();
   }
 }
      
-void alteraLuzes()
-{
-  tone(buzzer,500,100);
-  
-  digitalWrite(aut_verde,LOW);
-  digitalWrite(aut_amarelo,HIGH);
+void alteraLuzes(){
+  tone(9,500,100);
+  PORTD = 0x28;
   lcd.print("A: amarelo");
   lcd.setCursor(0,1);
   lcd.print("P: vermelho");
   delay(5000);
   lcd.clear();
 
-  tone(buzzer,750,100);
-  
-  digitalWrite(aut_vermelho,HIGH);
-  digitalWrite(aut_amarelo,LOW);  
-  digitalWrite(ped_vermelho,LOW);
-  digitalWrite(ped_verde,HIGH);  
+  tone(9,750,100);
+  PORTD = 0x44;
   lcd.print("A: vermelho");
   lcd.setCursor(0,1);
   lcd.print("P: verde");
   
   delay(tempoAbertura);
   
-  for (int x=0; x<10; x++) {
-    digitalWrite(ped_verde, LOW);
+  for (int x=0; x<10; x++){
+    PORTD = 0x4;
     delay(500);
-    digitalWrite(ped_verde, HIGH);
+    PORTD = 0x44;
     delay(500);
   }
   
   lcd.clear();
   
-  tone(buzzer,1000,100);
-  
-  digitalWrite(ped_verde,LOW);
-  digitalWrite(aut_vermelho,LOW);
-  digitalWrite(ped_vermelho,HIGH);
-  digitalWrite(aut_verde,HIGH);
-  
+  tone(9,1000,100);
+  PORTD = 0x30;  
   lcd.print("A: verde");
   lcd.setCursor(0,1);
   lcd.print("P: vermelho");
