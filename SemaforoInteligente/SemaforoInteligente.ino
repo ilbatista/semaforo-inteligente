@@ -14,9 +14,6 @@
 LiquidCrystal lcd(8,9,10,11,12,13);
 Button botao(2);
 
-//Declara o número de estados
-const byte NUMBER_OF_STATES = 4;
-
 //Inicializa os estados
 State Fechado = State(fechado);
 State Amarelo = State(amarelo);
