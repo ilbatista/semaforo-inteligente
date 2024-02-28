@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
-#include <Button.h>
-#include <FiniteStateMachine.h>
+#include <LED.h>
+#include "Button.h"
+#include "FiniteStateMachine.h"
 
 //Define os LED's
 #define vmc 7
@@ -20,8 +21,7 @@ State Amarelo = State(amarelo);
 State Aberto = State(aberto);
 State AbertoPCD = State(abertoPCD);
 
-//Inicializa a máquina de estado no primeiro estado
-FSM semaforo = FSM(Fechado);
+FSM semaforo = FSM(Fechado); //Inicializa a máquina de estado no primeiro estado
 
 //Inicializa os timers para controle do contador
 unsigned long millisInicial = 0;
@@ -32,7 +32,7 @@ int t_amarelo = 5;
 int t_aberto = 10;
 int t_abertoPCD = 30;
 
-bool contando = true;
+bool contando = true; //Flag para controle do timer
 
 void setup() {
   lcd.begin(16,2); //Instancia a tela
@@ -43,24 +43,22 @@ void setup() {
   for(int i = 3; i < 8; i++)
     pinMode(i, OUTPUT);
 
-  //Buzzer como OUTPUT no pino A0
-  pinMode(buzzer, OUTPUT);
+  pinMode(buzzer, OUTPUT); //Buzzer como OUTPUT no pino A0
 }
 
 void loop() {
   //Transiciona o status e soma o tempo quando o botão for pressionado no status adequado
   if (botao.pressed() && semaforo.isInState(Aberto)){
     t_abertoPCD = t_aberto + t_abertoPCD;
+    tone(buzzer,1500,250);
     semaforo.immediateTransitionTo(AbertoPCD);
   }
 
-  //Atualiza a máquina de estados
-  semaforo.update();
+  semaforo.update(); //Atualiza a máquina de estados
 }
 
 void fechado(){
-  //Ativar o contador regressivo
-  contando = true;
+  contando = true; //Ativa o contador regressivo
 
   //Seta os LED's
   digitalWrite(vmc, LOW);
@@ -69,26 +67,34 @@ void fechado(){
   digitalWrite(vmp, HIGH);
   digitalWrite(vdp, LOW);
 
-  millisAtual = millis();
+  millisAtual = millis(); //Registra o momento em que estado foi carregado
 
+  // Executa a cada clique (1s) do timer
   if(millisAtual - millisInicial > intervalo && contando) {
-    millisInicial = millis();
+    millisInicial = millis(); //Atualiza o timer inicial
     
+    //Prepara o display
     lcd.clear();
     lcd.print("Fechado pedestre");
     lcd.setCursor(0,1);
     lcd.print("00:");
 
+    //Exibe o timer na tela
     if(t_fechado > 9){
       lcd.print(t_fechado);
     } else {
       lcd.print("0" + String(t_fechado));
     }
-    t_fechado--;
+
+    tone(buzzer,500,100);
+
+    t_fechado--; //Auto-decremento do timer
+
+    //Para a contagem e avança para o próximo estado ao fim do timer
     if(t_fechado < 1){
-      contando = false;
-      t_fechado = 10;
-      semaforo.transitionTo(Amarelo);
+      contando = false; //Para o contador
+      t_fechado = 10; //Reseta o timer para este estado
+      semaforo.transitionTo(Amarelo); //Transiciona para o próximo estado
     }
   }
 }
@@ -117,7 +123,11 @@ void amarelo(){
     } else {
       lcd.print("0" + String(t_amarelo));
     }
+
+    tone(buzzer,750,100);
+
     t_amarelo--;
+
     if(t_amarelo < 1){
       contando = false;
       t_amarelo = 5;
@@ -150,6 +160,9 @@ void aberto(){
     } else {
       lcd.print("0" + String(t_aberto));
     }
+
+    tone(buzzer,1000,100);
+
     t_aberto--;
     if(t_aberto < 1){
       contando = false;
@@ -184,6 +197,9 @@ void abertoPCD(){
     } else {
       lcd.print("0" + String(t_abertoPCD));
     }
+
+    tone(buzzer,1000,100);
+    
     t_abertoPCD--;
     if(t_abertoPCD < 1){
       contando = false;
