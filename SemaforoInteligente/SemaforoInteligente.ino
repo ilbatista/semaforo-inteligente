@@ -75,7 +75,7 @@ void fechado(){
 
   millisAtual = millis(); //Registra o momento em que estado foi carregado
 
-  //Executa a cada clique (1s) do timer
+  //Condicional será executado a cada 1 segundo se o contador estiver ativo
   if(millisAtual - millisInicial > intervalo && contando) {
     millisInicial = millis(); //Atualiza o timer inicial
     
