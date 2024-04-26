@@ -27,3 +27,7 @@ GNU General Public License (GPLv3).
 ## Status do projeto
 
 Em desenvolvimento.
+
+## Apresentação em slides
+
+[Abrir em nova guia](https://my.visme.co/view/q6pjr7yr-navetech#s1)
