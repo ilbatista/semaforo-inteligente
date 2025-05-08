@@ -4,17 +4,17 @@
 #include "Adafruit_NeoPixel.h"
 #include "math.h"
 
-#define PIN_WS2812B_1 32
-#define PIN_WS2812B_2 33
-#define NUM_PIXELS 64
+#define painelAut_DIN 32
+#define painelPas_DIN 33
+#define num_pixels 64
 #define buzzer 16
 
-int vrm_array[] = { 2,3,4,5,9,10,11,12,13,14,16,17,18,21,22,23,24,25,30,31,32,33,38,39,40,41,42,45,46,47,49,50,51,52,53,54,58,59,60,61 };
-int amr_array[] = { 1,2,3,4,5,6,9,14,18,21,27,28,35,36,42,45,49,54,57,58,59,60,61,62 };
-int vrd_array[] = { 0,1,6,7,9,10,13,14,18,19,20,21,24,27,28,31,32,33,38,39,41,42,45,46,50,51,52,53,59,60 };
+int vermelho_array[] = { 2,3,4,5,9,10,11,12,13,14,16,17,18,21,22,23,24,25,30,31,32,33,38,39,40,41,42,45,46,47,49,50,51,52,53,54,58,59,60,61 };
+int amarelo_array[] = { 1,2,3,4,5,6,9,14,18,21,27,28,35,36,42,45,49,54,57,58,59,60,61,62 };
+int verde_array[] = { 0,1,6,7,9,10,13,14,18,19,20,21,24,27,28,31,32,33,38,39,41,42,45,46,50,51,52,53,59,60 };
 
-Adafruit_NeoPixel ws2812b_1(NUM_PIXELS, PIN_WS2812B_1, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel ws2812b_2(NUM_PIXELS, PIN_WS2812B_2, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel painelAut(num_pixels, painelAut_DIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel painelPas(num_pixels, painelPas_DIN, NEO_GRB + NEO_KHZ800);
 LiquidCrystal_I2C lcd(0x27,16,2);
 Button botao(17);
 
@@ -28,19 +28,19 @@ FSM semaforo = FSM(Fechado);
 unsigned long millisInicial = 0;
 unsigned long millisAtual = 0;
 const long intervalo = 1000;
-int t_fechado = 10;
-int t_amarelo = 5;
-int t_aberto = 10;
-int t_abertoPCD = 30;
+int timerFechado = 10;
+int timerAtencao = 5;
+int timerAberto = 10;
+int timerAbertoPCD = 30;
 
-bool contando = true;
+bool contagem = true;
 
 void setup() {
-  pinMode (PIN_WS2812B_1, OUTPUT);
-  pinMode (PIN_WS2812B_2, OUTPUT);
+  pinMode (painelAut_DIN, OUTPUT);
+  pinMode (painelPas_DIN, OUTPUT);
   pinMode(buzzer, OUTPUT);
-  ws2812b_1.begin();
-  ws2812b_2.begin();
+  painelAut.begin();
+  painelPas.begin();
   lcd.init();
   lcd.backlight();
   botao.begin();
@@ -48,7 +48,7 @@ void setup() {
 
 void loop() {
   if (botao.pressed() && semaforo.isInState(Aberto)){
-    t_abertoPCD = t_aberto + t_abertoPCD;
+    timerAbertoPCD = timerAberto + timerAbertoPCD;
     tone(buzzer,1500,250);
     semaforo.immediateTransitionTo(AbertoPCD);
   }
@@ -57,14 +57,14 @@ void loop() {
 }
 
 void fechado(){
-  contando = true;
+  contagem = true;
 
-  verde_c();
-  vermelho_p();
+  abertoAut();
+  fechadoPas();
 
   millisAtual = millis();
 
-  if(millisAtual - millisInicial > intervalo && contando) {
+  if(millisAtual - millisInicial > intervalo && contagem) {
     millisInicial = millis();
 
     lcd.clear();
@@ -72,32 +72,32 @@ void fechado(){
     lcd.setCursor(0,1);
     lcd.print("00:");
 
-    if(t_fechado > 9){
-      lcd.print(t_fechado);
+    if(timerFechado > 9){
+      lcd.print(timerFechado);
     } else {
-      lcd.print("0" + String(t_fechado));
+      lcd.print("0" + String(timerFechado));
     }
 
     tone(buzzer,500,100);
 
-    t_fechado--;
+    timerFechado--;
 
-    if(t_fechado < 0){
-      contando = false;
-      t_fechado = 10;
+    if(timerFechado < 0){
+      contagem = false;
+      timerFechado = 10;
       semaforo.immediateTransitionTo(Amarelo);
     }
   }
 }
 
 void amarelo(){
-  contando = true;
+  contagem = true;
 
-  amarelo_c();
+  atencao();
 
   millisAtual = millis();
 
-  if(millisAtual - millisInicial > intervalo && contando) {
+  if(millisAtual - millisInicial > intervalo && contagem) {
     millisInicial = millis();
     
     lcd.clear();
@@ -105,44 +105,44 @@ void amarelo(){
     lcd.setCursor(0,1);
     lcd.print("00:");
 
-    if(t_amarelo > 9){
-      lcd.print(t_amarelo);
+    if(timerAtencao > 9){
+      lcd.print(timerAtencao);
     } else {
-      lcd.print("0" + String(t_amarelo));
+      lcd.print("0" + String(timerAtencao));
     }
 
     tone(buzzer,750,100);
 
-    t_amarelo--;
+    timerAtencao--;
 
-    if(t_amarelo < 0){
-      contando = false;
-      t_amarelo = 5;
+    if(timerAtencao < 0){
+      contagem = false;
+      timerAtencao = 5;
       semaforo.immediateTransitionTo(Aberto);
     }
   }
 }
 
 void aberto(){  
-  contando = true;
+  contagem = true;
 
-  if(t_aberto < 5){
-    if((t_aberto & 1) == 0){
-      vermelho_c();
-      vermelho_p();
+  if(timerAberto < 5){
+    if((timerAberto & 1) == 0){
+      fechadoAut();
+      fechadoPas();
     }
     else {
-      ws2812b_2.clear();
-      ws2812b_2.show();
+      painelPas.clear();
+      painelPas.show();
     }
   } else {
-    vermelho_c();
-    verde_p();
+    fechadoAut();
+    abertoPas();
   }
 
   millisAtual = millis();
 
-  if(millisAtual - millisInicial > intervalo && contando) {
+  if(millisAtual - millisInicial > intervalo && contagem) {
     millisInicial = millis();
     
     lcd.clear();
@@ -150,45 +150,45 @@ void aberto(){
     lcd.setCursor(0,1);
     lcd.print("00:");
 
-    if(t_aberto > 9){
-      lcd.print(t_aberto);
+    if(timerAberto > 9){
+      lcd.print(timerAberto);
     } else {
-      lcd.print("0" + String(t_aberto));
+      lcd.print("0" + String(timerAberto));
     }
 
     tone(buzzer,1000,100);
 
-    t_aberto--;
+    timerAberto--;
 
-    if(t_aberto < 0){
-      contando = false;
-      t_aberto = 10;
-      t_abertoPCD = 30;
+    if(timerAberto < 0){
+      contagem = false;
+      timerAberto = 10;
+      timerAbertoPCD = 30;
       semaforo.immediateTransitionTo(Fechado);
     }
   }
 }
 
 void abertoPCD(){
-  contando = true;
+  contagem = true;
 
-  if(t_abertoPCD < 5){
-    if((t_abertoPCD & 1) == 0){
-      vermelho_c();
-      vermelho_p();
+  if(timerAbertoPCD < 5){
+    if((timerAbertoPCD & 1) == 0){
+      fechadoAut();
+      fechadoPas();
     }
     else {
-      ws2812b_2.clear();
-      ws2812b_2.show();
+      painelPas.clear();
+      painelPas.show();
     }
   } else {
-    vermelho_c();
-    verde_p();
+    fechadoAut();
+    abertoPas();
   }
 
   millisAtual = millis();
 
-  if(millisAtual - millisInicial > intervalo && contando) {
+  if(millisAtual - millisInicial > intervalo && contagem) {
     millisInicial = millis();
     
     lcd.clear();
@@ -196,76 +196,76 @@ void abertoPCD(){
     lcd.setCursor(0,1);
     lcd.print("00:");
 
-    if(t_abertoPCD > 9){
-      lcd.print(t_abertoPCD);
+    if(timerAbertoPCD > 9){
+      lcd.print(timerAbertoPCD);
     } else {
-      lcd.print("0" + String(t_abertoPCD));
+      lcd.print("0" + String(timerAbertoPCD));
     }
 
     tone(buzzer,1000,100);
     
-    t_abertoPCD--;
+    timerAbertoPCD--;
     
-    if(t_abertoPCD < 0){
-      contando = false;
-      t_aberto = 10;
-      t_abertoPCD = 30;
+    if(timerAbertoPCD < 0){
+      contagem = false;
+      timerAberto = 10;
+      timerAbertoPCD = 30;
       semaforo.immediateTransitionTo(Fechado);
     }
   }
 }
 
-void vermelho_c(){
-  ws2812b_1.clear();
+void fechadoAut(){
+  painelAut.clear();
   
   for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vrm_array), std::end(vrm_array), pixel) != std::end(vrm_array))
-      ws2812b_1.setPixelColor(pixel, ws2812b_1.Color(127, 0, 0));
+    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array))
+      painelAut.setPixelColor(pixel, painelAut.Color(127, 0, 0));
   }
 
-  ws2812b_1.show();
+  painelAut.show();
 }
 
-void amarelo_c(){
-  ws2812b_1.clear();
+void atencao(){
+  painelAut.clear();
   
   for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(amr_array), std::end(amr_array), pixel) != std::end(amr_array))
-      ws2812b_1.setPixelColor(pixel, ws2812b_1.Color(127, 82, 0));
+    if (std::find(std::begin(amarelo_array), std::end(amarelo_array), pixel) != std::end(amarelo_array))
+      painelAut.setPixelColor(pixel, painelAut.Color(127, 82, 0));
   }
 
-  ws2812b_1.show();
+  painelAut.show();
 }
 
-void verde_c(){
-  ws2812b_1.clear();
+void abertoAut(){
+  painelAut.clear();
   
   for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vrd_array), std::end(vrd_array), pixel) != std::end(vrd_array))
-      ws2812b_1.setPixelColor(pixel, ws2812b_1.Color(0, 127, 0));
+    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array))
+      painelAut.setPixelColor(pixel, painelAut.Color(0, 127, 0));
   }
 
-  ws2812b_1.show();
+  painelAut.show();
 }
 
-void vermelho_p(){
-  ws2812b_2.clear();
+void fechadoPas(){
+  painelPas.clear();
   
   for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vrm_array), std::end(vrm_array), pixel) != std::end(vrm_array))
-      ws2812b_2.setPixelColor(pixel, ws2812b_2.Color(127, 0, 0));
+    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array))
+      painelPas.setPixelColor(pixel, painelPas.Color(127, 0, 0));
   }
 
-  ws2812b_2.show();
+  painelPas.show();
 }
 
-void verde_p(){
-  ws2812b_2.clear();
+void abertoPas(){
+  painelPas.clear();
   
   for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vrd_array), std::end(vrd_array), pixel) != std::end(vrd_array))
-      ws2812b_2.setPixelColor(pixel, ws2812b_2.Color(0, 127, 0));
+    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array))
+      painelPas.setPixelColor(pixel, painelPas.Color(0, 127, 0));
   }
 
-  ws2812b_2.show();
+  painelPas.show();
 }
