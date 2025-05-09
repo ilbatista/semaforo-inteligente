@@ -12,9 +12,9 @@ A idéia do projeto é o desenvolvimento de um sistema de sinalização semafór
 - ⚪ Deverá possibilitar o gerenciamento de forma remota.
 
 Legenda
-- 🟢: Feature totalmente implementado.
-- 🟠: Feature implementado parcialmente.
-- ⚪: Feature planejado.
+- 🟢 Feature totalmente implementado.
+- 🟠 Feature implementado parcialmente.
+- ⚪ Feature planejado.
 
 ## Autores
 
