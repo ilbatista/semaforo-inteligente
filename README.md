@@ -6,10 +6,10 @@ A idéia do projeto é o desenvolvimento de um sistema de sinalização semafór
 
 ## Quais são as premissas do projeto?
 
-- 🟢 Integrar auxílios visuais para portadores de deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo.
+- 🟢 Integrar auxílios visuais para pedestres com deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo.
 - 🟢 Integrar auxílios para pedestres com mobilidade reduzida.
-- 🟠 Integrar auxílios sonoros para portadores de deficiências visuais com perda total ou parcial da visão.
-- ⚪ Deverá possibilitar o gerenciamento de forma remota.
+- 🟠 Integrar auxílios sonoros para pedestres com deficiências visuais com perda total ou parcial da visão.
+- ⚪ Integrar telemetria para permitir o gerenciamento de forma remota.
 
 Legenda
 - 🟢 Feature totalmente implementado.
