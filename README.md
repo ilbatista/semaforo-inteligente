@@ -2,18 +2,19 @@
 
 ## Do que se trata o projeto?
 
-A idéia deste projeto é que, através do emprego de IoT, possamos criar um semáforo inteligente que proporcione melhor acessibilidade a pessoas com deficiências visuais — perda total/parcial de visão ou daltonismo —, auditivas ou de mobilidade.
-
-## Como esperamos alcançar este objetivo?
-
-Empregando tecnologias existentes e uma abordagem de baixo custo, esperamos conseguir um projeto com custo competitivo e que não incorra em grande complexidade para a implantação.
+A idéia do projeto é o desenvolvimento de um sistema de sinalização semafórica inteligente que proporcione mecanismos de acessibilidade a pessoas com deficiências visuais — perda total/parcial de visão ou daltonismo —, auditivas ou de mobilidade.
 
 ## Quais são as premissas do projeto?
 
-- Deverá integrar auxílios sonoros para portadores de deficiências visuais com perda total ou parcial da visão.
-- Deverá integrar auxílios visuais para portadores de deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo.
-- Deverá integrar auxílios para pedestres com mobilidade reduzida.
-- Deverá possibilitar o gerenciamento de forma remota.
+- Integrar auxílios visuais para portadores de deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo — 🟢.
+- Integrar auxílios para pedestres com mobilidade reduzida — 🟢.
+- Integrar auxílios sonoros para portadores de deficiências visuais com perda total ou parcial da visão — 🟠.
+- Deverá possibilitar o gerenciamento de forma remota — ⚪.
+
+Legenda
+- 🟢: Feature totalmente implementado.
+- 🟠: Feature implementado parcialmente.
+- ⚪: Feature planejado.
 
 ## Autores
 
