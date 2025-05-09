@@ -1,271 +1,295 @@
-#include "LiquidCrystal_I2C.h"
-#include "Button.h"
-#include "FiniteStateMachine.h"
-#include "Adafruit_NeoPixel.h"
-#include "math.h"
+#include "LiquidCrystal_I2C.h" //Controla o display LCD da botoeira
+#include "Button.h" //Controla o botão da botoeira
+#include "FiniteStateMachine.h" //Controla a máquina de estados
+#include "Adafruit_NeoPixel.h" //Controla os LEDs do painel
+#include "math.h" //Requisito para o uso de funções matemáticas
 
-#define painelAut_DIN 32
-#define painelPas_DIN 33
-#define num_pixels 64
-#define buzzer 16
+#define painelAut_DIN 32 //Pino de dados do painel de LEDs do semáforo de automóveis
+#define painelPed_DIN 33 //Pino de dados do painel de LEDs do semáforo de pedestres 
+#define numPixels 64 //Número de LEDs do painel
+#define buzzer 16 //Pino do buzzer
 
+/*
+
+Configuração dos LEDs do painel para o status de semáforo vermelho
+
+    # # # #    
+  # # # # # #  
+# # #     # # #
+# #         # #
+# #         # #
+# # #     # # #
+  # # # # # #  
+    # # # #     
+
+*/
 int vermelho_array[] = { 2,3,4,5,9,10,11,12,13,14,16,17,18,21,22,23,24,25,30,31,32,33,38,39,40,41,42,45,46,47,49,50,51,52,53,54,58,59,60,61 };
+
+/*
+
+Configuração dos LEDs do painel para o status de semáforo amarelo
+
+  # # # # # #  
+  #         #  
+    #     #    
+      # #      
+      # #      
+    #     #    
+  #         #  
+  # # # # # #  
+
+*/
 int amarelo_array[] = { 1,2,3,4,5,6,9,14,18,21,27,28,35,36,42,45,49,54,57,58,59,60,61,62 };
+
+/*
+
+Configuração dos LEDs do painel para o status de semáforo verde
+
+      # #      
+    # # # #    
+  # #     # #  
+# #   # #   # #
+#   # # # #   #
+  # #    # #
+# #        # #
+#            #
+
+*/
 int verde_array[] = { 0,1,6,7,9,10,13,14,18,19,20,21,24,27,28,31,32,33,38,39,41,42,45,46,50,51,52,53,59,60 };
 
-Adafruit_NeoPixel painelAut(num_pixels, painelAut_DIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel painelPas(num_pixels, painelPas_DIN, NEO_GRB + NEO_KHZ800);
-LiquidCrystal_I2C lcd(0x27,16,2);
-Button botao(17);
+Adafruit_NeoPixel painelAut(numPixels, painelAut_DIN, NEO_GRB + NEO_KHZ800); //Instância do painel de LEDs do semáforo de automóveis
+Adafruit_NeoPixel painelPed(numPixels, painelPed_DIN, NEO_GRB + NEO_KHZ800); //Instância do painel de LEDs do semáforo de pedestres
+LiquidCrystal_I2C lcd(0x27,16,2); //Instância do display LCD com endereço 0x27 e 16 colunas e 2 linhas
+Button botao(17); //Instância do botão da botoeira no pino 17
 
-State Fechado = State(fechado);
-State Amarelo = State(amarelo);
-State Aberto = State(aberto);
-State AbertoPCD = State(abertoPCD);
+State Fechado = State(fechado); //Definição do estado fechado para pedestres
+State Atencao = State(atencao); //Definição do estado de atenção
+State Aberto = State(aberto); //Definição do estado aberto para pedestres
+State AbertoPCD = State(abertoPCD); //Definição do estado aberto para PCD
 
-FSM semaforo = FSM(Fechado);
+FSM semaforo = FSM(Fechado); //Instância da máquina de estados com o estado inicial fechado
 
-unsigned long millisInicial = 0;
-unsigned long millisAtual = 0;
-const long intervalo = 1000;
-int timerFechado = 10;
-int timerAtencao = 5;
-int timerAberto = 10;
-int timerAbertoPCD = 30;
+unsigned long millisInicial = 0; //Variável para armazenar o tempo inicial
+unsigned long millisAtual = 0; //Variável para armazenar o tempo atual
+const long intervalo = 1000; //Intervalo de 1 segundo
+int timerFechado = 10; //Tempo do semáforo fechado para pedestres
+int timerAtencao = 5; //Tempo do semáforo em atenção
+int timerAberto = 10; //Tempo do semáforo aberto para pedestres
+int timerAbertoPCD = 30; //Tempo do semáforo aberto para PCD
 
-bool contagem = true;
+bool contagem = true; //Variável para controlar a contagem do tempo
 
 void setup() {
-  pinMode (painelAut_DIN, OUTPUT);
-  pinMode (painelPas_DIN, OUTPUT);
-  pinMode(buzzer, OUTPUT);
-  painelAut.begin();
-  painelPas.begin();
-  lcd.init();
-  lcd.backlight();
-  botao.begin();
+  pinMode (painelAut_DIN, OUTPUT); //Configura o pino do painel de LEDs do semáforo de automóveis como saída
+  pinMode (painelPed_DIN, OUTPUT); //Configura o pino do painel de LEDs do semáforo de pedestres como saída
+  pinMode(buzzer, OUTPUT); //Configura o pino do buzzer como saída
+  painelAut.begin(); //Inicializa o painel de LEDs do semáforo de automóveis
+  painelPed.begin(); //Inicializa o painel de LEDs do semáforo de pedestres
+  lcd.init(); //Inicializa o display LCD
+  lcd.backlight(); //Liga a luz de fundo do display LCD
+  botao.begin(); //Inicializa o botão da botoeira
 }
 
 void loop() {
-  if (botao.pressed() && semaforo.isInState(Aberto)){
-    timerAbertoPCD = timerAberto + timerAbertoPCD;
-    tone(buzzer,1500,250);
-    semaforo.immediateTransitionTo(AbertoPCD);
+  if (botao.pressed() && semaforo.isInState(Aberto)){ //Verifica se o botão foi pressionado e se o semáforo está aberto
+    contagem = false; //Desativa a contagem
+    timerAbertoPCD = timerAberto + timerAbertoPCD; //Aumenta o tempo do semáforo aberto para PCD
+    tone(buzzer,1500,250); //Emite um som no buzzer
+    semaforo.immediateTransitionTo(AbertoPCD); //Transita para o estado aberto para PCD
   }
 
-  semaforo.update();
+  semaforo.update(); //Atualiza a máquina de estados
 }
 
 void fechado(){
-  contagem = true;
+  contagem = true; //Ativa a contagem
+  verdeAut(); //Atualiza o semáforo de automóveis para verde e o semáforo de pedestres para vermelho
+  millisAtual = millis(); //Obtém o tempo atual
 
-  abertoAut();
-  fechadoPas();
+  if(millisAtual - millisInicial > intervalo && contagem) { //Executado a cada segundo
+    millisInicial = millis(); //Atualiza o tempo inicial
 
-  millisAtual = millis();
+    lcd.clear(); //Limpa o display LCD
+    lcd.print("Fechado pedestre"); //Exibe a mensagem "Fechado pedestre"
+    lcd.setCursor(0,1); //Define o cursor na segunda linha
+    lcd.print("00:"); //Exibe "00:" no display LCD, para formatação
 
-  if(millisAtual - millisInicial > intervalo && contagem) {
-    millisInicial = millis();
-
-    lcd.clear();
-    lcd.print("Fechado pedestre");
-    lcd.setCursor(0,1);
-    lcd.print("00:");
-
-    if(timerFechado > 9){
-      lcd.print(timerFechado);
-    } else {
-      lcd.print("0" + String(timerFechado));
+    if(timerFechado > 9){ //Executado se o tempo restante for maior que 9
+      lcd.print(timerFechado); //Exibe o tempo restante
+    } else { //Executado se o tempo restante for menor que 9
+      lcd.print("0" + String(timerFechado)); //Exibe o tempo restante com um zero à esquerda
     }
 
-    tone(buzzer,500,100);
+    tone(buzzer,500,100); //Emite um tom de 500Hz no buzzer por 100ms
+    timerFechado--; //Decrementa o tempo restante
 
-    timerFechado--;
-
-    if(timerFechado < 0){
-      contagem = false;
-      timerFechado = 10;
-      semaforo.immediateTransitionTo(Amarelo);
+    if(timerFechado < 0){ //Executado ao final do timer
+      contagem = false; //Desativa a contagem
+      timerFechado = 10; //Reinicia o tempo para o status atual
+      semaforo.immediateTransitionTo(Atencao); //Transita para o estado de semáforo amarelo
     }
   }
 }
 
-void amarelo(){
-  contagem = true;
+void atencao(){
+  contagem = true; //Ativa a contagem
+  amarelo(); //Atualiza o semáforo de automóveis para amarelo e o semáforo de pedestres para vermelho
+  millisAtual = millis(); //Obtém o tempo atual
 
-  atencao();
-
-  millisAtual = millis();
-
-  if(millisAtual - millisInicial > intervalo && contagem) {
-    millisInicial = millis();
+  if(millisAtual - millisInicial > intervalo && contagem) { //Executado a cada segundo
+    millisInicial = millis(); //Atualiza o tempo inicial
     
-    lcd.clear();
-    lcd.print("Atencao");
-    lcd.setCursor(0,1);
-    lcd.print("00:");
+    lcd.clear(); //Limpa o display LCD
+    lcd.print("Atencao"); //Exibe a mensagem "Atenção"
+    lcd.setCursor(0,1); //Define o cursor na segunda linha
+    lcd.print("00:"); //Exibe "00:" no display LCD, para formatação
 
-    if(timerAtencao > 9){
-      lcd.print(timerAtencao);
-    } else {
-      lcd.print("0" + String(timerAtencao));
+    if(timerAtencao > 9){ //Executado se o tempo restante for maior que 9
+      lcd.print(timerAtencao); //Exibe o tempo restante
+    } else { //Executado se o tempo restante for menor que 9
+      lcd.print("0" + String(timerAtencao)); //Exibe o tempo restante com um zero à esquerda
     }
 
-    tone(buzzer,750,100);
+    tone(buzzer,750,100); //Emite um tom de 750Hz no buzzer por 100ms
+    timerAtencao--; //Decrementa o tempo restante
 
-    timerAtencao--;
-
-    if(timerAtencao < 0){
-      contagem = false;
-      timerAtencao = 5;
-      semaforo.immediateTransitionTo(Aberto);
+    if(timerAtencao < 0){ //Executado ao final do timer
+      contagem = false; //Desativa a contagem
+      timerAtencao = 5; //Reinicia o tempo para o status atual
+      semaforo.immediateTransitionTo(Aberto); //Transita para o estado aberto para pedestres
     }
   }
 }
 
 void aberto(){  
-  contagem = true;
+  contagem = true; //Ativa a contagem
 
-  if(timerAberto < 5){
-    if((timerAberto & 1) == 0){
-      fechadoAut();
-      fechadoPas();
+  if(timerAberto < 5){ //Executado se o tempo restante for menor que 5
+    if((timerAberto & 1) == 0){ //Verifica se o tempo restante é par
+      vermelhoAut(); //Atualiza o semáforo de automóveis para vermelho e o semáforo de pedestres para verde
     }
     else {
-      painelPas.clear();
-      painelPas.show();
+      painelPed.clear(); //Limpa o painel de LEDs do semáforo de pedestres
+      painelPed.show(); //Atualiza o painel de LEDs do semáforo de pedestres
     }
   } else {
-    fechadoAut();
-    abertoPas();
+    vermelhoAut(); //Atualiza o semáforo de automóveis para vermelho e o semáforo de pedestres para verde
   }
 
-  millisAtual = millis();
+  millisAtual = millis(); //Obtém o tempo atual
 
-  if(millisAtual - millisInicial > intervalo && contagem) {
-    millisInicial = millis();
+  if(millisAtual - millisInicial > intervalo && contagem) { //Executado a cada segundo
+    millisInicial = millis(); //Atualiza o tempo inicial
     
-    lcd.clear();
-    lcd.print("Aberto pedestre");
-    lcd.setCursor(0,1);
-    lcd.print("00:");
+    lcd.clear(); //Limpa o display LCD
+    lcd.print("Aberto pedestre"); //Exibe a mensagem "Aberto pedestre"
+    lcd.setCursor(0,1); //Define o cursor na segunda linha
+    lcd.print("00:"); //Exibe "00:" no display LCD, para formatação
 
-    if(timerAberto > 9){
-      lcd.print(timerAberto);
-    } else {
-      lcd.print("0" + String(timerAberto));
+    if(timerAberto > 9){ //Executado se o tempo restante for maior que 9
+      lcd.print(timerAberto); //Exibe o tempo restante
+    } else { //Executado se o tempo restante for menor que 9
+      lcd.print("0" + String(timerAberto)); //Exibe o tempo restante com um zero à esquerda
     }
 
-    tone(buzzer,1000,100);
+    tone(buzzer,1000,100); //Emite um tom de 1kHz no buzzer por 100ms
+    timerAberto--; //Decrementa o tempo restante
 
-    timerAberto--;
-
-    if(timerAberto < 0){
-      contagem = false;
-      timerAberto = 10;
-      timerAbertoPCD = 30;
-      semaforo.immediateTransitionTo(Fechado);
+    if(timerAberto < 0){ //Executado ao final do timer
+      contagem = false; //Desativa a contagem
+      timerAberto = 10; //Reinicia o tempo para o status atual
+      timerAbertoPCD = 30; //Reinicia o tempo para o status atual
+      semaforo.immediateTransitionTo(Fechado); //Transita para o estado fechado para pedestres
     }
   }
 }
 
 void abertoPCD(){
-  contagem = true;
+  contagem = true; //Ativa a contagem
 
-  if(timerAbertoPCD < 5){
-    if((timerAbertoPCD & 1) == 0){
-      fechadoAut();
-      fechadoPas();
+  if(timerAbertoPCD < 5){ //Executado se o tempo restante for menor que 5
+    if((timerAbertoPCD & 1) == 0){ //Verifica se o tempo restante é par 
+      vermelhoAut(); //Atualiza o semáforo de automóveis para vermelho e o semáforo de pedestres para verde
     }
-    else {
-      painelPas.clear();
-      painelPas.show();
+    else { //Executado se o tempo restante for ímpar
+      painelPed.clear(); //Limpa o painel de LEDs do semáforo de pedestres
+      painelPed.show(); //Atualiza o painel de LEDs do semáforo de pedestres
     }
-  } else {
-    fechadoAut();
-    abertoPas();
+  } else { //Executado se o tempo restante for maior que 5
+    vermelhoAut(); //Atualiza o semáforo de automóveis para vermelho e o semáforo de pedestres para verde
   }
 
-  millisAtual = millis();
+  millisAtual = millis(); //Obtém o tempo atual
 
-  if(millisAtual - millisInicial > intervalo && contagem) {
-    millisInicial = millis();
+  if(millisAtual - millisInicial > intervalo && contagem) { //Executado a cada segundo
+    millisInicial = millis(); //Atualiza o tempo inicial
     
-    lcd.clear();
-    lcd.print("Aberto PcD");
-    lcd.setCursor(0,1);
-    lcd.print("00:");
+    lcd.clear(); //Limpa o display LCD
+    lcd.print("Aberto PcD"); //Exibe a mensagem "Aberto PCD"
+    lcd.setCursor(0,1); //Define o cursor na segunda linha
+    lcd.print("00:"); //Exibe "00:" no display LCD, para formatação
 
-    if(timerAbertoPCD > 9){
-      lcd.print(timerAbertoPCD);
-    } else {
-      lcd.print("0" + String(timerAbertoPCD));
+    if(timerAbertoPCD > 9){ //Executado se o tempo restante for maior que 9
+      lcd.print(timerAbertoPCD); //Exibe o tempo restante
+    } else { //Executado se o tempo restante for menor que 9
+      lcd.print("0" + String(timerAbertoPCD)); //Exibe o tempo restante com um zero à esquerda
     }
 
-    tone(buzzer,1000,100);
+    tone(buzzer,1000,100); //Emite um tom de 1kHz no buzzer por 100ms    
+    timerAbertoPCD--; //Decrementa o tempo restante
     
-    timerAbertoPCD--;
-    
-    if(timerAbertoPCD < 0){
-      contagem = false;
-      timerAberto = 10;
-      timerAbertoPCD = 30;
-      semaforo.immediateTransitionTo(Fechado);
+    if(timerAbertoPCD < 0){ //Executado ao final do timer
+      contagem = false; //Desativa a contagem
+      timerAberto = 10; //Reinicia o tempo para o status atual
+      timerAbertoPCD = 30; //Reinicia o tempo para o status atual
+      semaforo.immediateTransitionTo(Fechado); //Transita para o estado fechado para pedestres
     }
   }
 }
 
-void fechadoAut(){
-  painelAut.clear();
+void vermelhoAut(){
+  painelAut.clear(); //Limpa o painel de LEDs do semáforo de automóveis
+  painelPed.clear(); //Limpa os painéis de LEDs do semáforo de automóveis e pedestres
   
-  for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array))
-      painelAut.setPixelColor(pixel, painelAut.Color(127, 0, 0));
+  for (int pixel = 0; pixel < 65; pixel++) { //Percorre o array de LEDs (64 pixels)
+    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array)) //Verifica se o pixel está no array de LEDs vermelhos
+      painelAut.setPixelColor(pixel, painelAut.Color(127, 0, 0)); //Configura o LED para vermelho
   }
 
-  painelAut.show();
+  for (int pixel = 0; pixel < 65; pixel++) { //Percorre o array de LEDs (64 pixels)
+    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array)) //Verifica se o pixel está no array de LEDs verdes
+      painelPed.setPixelColor(pixel, painelPed.Color(0, 127, 0)); //Configura o LED para verde
+  }
+
+  painelAut.show(); //Atualiza o painel de LEDs do semáforo de automóveis
+  painelPed.show(); //Atualiza o painel de LEDs do semáforo de pedestres
 }
 
-void atencao(){
-  painelAut.clear();
+void amarelo(){
+  painelAut.clear(); //Limpa o painel de LEDs do semáforo de automóveis
   
-  for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(amarelo_array), std::end(amarelo_array), pixel) != std::end(amarelo_array))
-      painelAut.setPixelColor(pixel, painelAut.Color(127, 82, 0));
+  for (int pixel = 0; pixel < 65; pixel++) { //Percorre o array de LEDs (64 pixels)
+    if (std::find(std::begin(amarelo_array), std::end(amarelo_array), pixel) != std::end(amarelo_array)) //Verifica se o pixel está no array de LEDs amarelos
+      painelAut.setPixelColor(pixel, painelAut.Color(127, 82, 0)); //Configura o LED para amarelo
   }
 
-  painelAut.show();
+  painelAut.show(); //Atualiza o painel de LEDs do semáforo de automóveis
 }
 
-void abertoAut(){
-  painelAut.clear();
+void verdeAut(){
+  painelAut.clear(); //Limpa o painel de LEDs do semáforo de automóveis
+  painelPed.clear(); //Limpa o painel de LEDs do semáforo de pedestres
   
-  for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array))
-      painelAut.setPixelColor(pixel, painelAut.Color(0, 127, 0));
+  for (int pixel = 0; pixel < 65; pixel++) { //Percorre o array de LEDs (64 pixels)
+    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array)) //Verifica se o pixel está no array de LEDs verdes
+      painelAut.setPixelColor(pixel, painelAut.Color(0, 127, 0)); //Configura o LED para verde
   }
 
-  painelAut.show();
-}
-
-void fechadoPas(){
-  painelPas.clear();
-  
-  for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array))
-      painelPas.setPixelColor(pixel, painelPas.Color(127, 0, 0));
+  for (int pixel = 0; pixel < 65; pixel++) { //Percorre o array de LEDs (64 pixels)
+    if (std::find(std::begin(vermelho_array), std::end(vermelho_array), pixel) != std::end(vermelho_array)) //Verifica se o pixel está no array de LEDs vermelhos
+    painelPed.setPixelColor(pixel, painelPed.Color(127, 0, 0)); //Configura o LED para vermelho
   }
 
-  painelPas.show();
-}
-
-void abertoPas(){
-  painelPas.clear();
-  
-  for (int pixel = 0; pixel < 65; pixel++) {
-    if (std::find(std::begin(verde_array), std::end(verde_array), pixel) != std::end(verde_array))
-      painelPas.setPixelColor(pixel, painelPas.Color(0, 127, 0));
-  }
-
-  painelPas.show();
+  painelAut.show(); //Atualiza o painel de LEDs do semáforo de automóveis
+  painelPed.show(); //Atualiza o painel de LEDs do semáforo de pedestres
 }
