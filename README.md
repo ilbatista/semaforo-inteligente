@@ -1,20 +1,23 @@
 # Semáforo Inteligente
 
-## Do que se trata o projeto?
+## Definição do projeto
 
-A idéia do projeto é o desenvolvimento de um sistema de sinalização semafórica inteligente que proporcione mecanismos de acessibilidade a pessoas com deficiências visuais — perda total/parcial de visão ou daltonismo —, auditivas ou de mobilidade.
+O projeto propõe o desenvolvimento de um sistema de sinalização semafórica inteligente que empregue mecanismos de acessibilidade de forma a auxiliar pedestres com deficiências visuais — perda total/parcial de visão ou daltonismo —, auditivas ou de mobilidade.
 
-## Quais são as premissas do projeto?
+## Features implementados
 
-- 🟢 Integrar auxílios visuais para pedestres com deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo.
-- 🟢 Integrar auxílios para pedestres com mobilidade reduzida.
-- 🟠 Integrar auxílios sonoros para pedestres com deficiências visuais com perda total ou parcial da visão.
-- ⚪ Integrar telemetria para permitir o gerenciamento de forma remota.
+- Auxílios visuais para pedestres com deficiências auditivas, bem como pedestres e motoristas portadores de daltonismo.
+  - Implementada uma prova de conceito com visualização em uma matriz de 8x8 pixels.
+- Auxílios para pedestres com mobilidade reduzida.
+   - Implementado um timer com proteção contra comandos indevidos.
+- Auxílios sonoros para pedestres com deficiências visuais com perda total ou parcial da visão.
+  - Implementado o uso de tons com frequências distintas para cada status da sinalização.
 
-Legenda
-- 🟢 Feature totalmente implementado.
-- 🟠 Feature implementado parcialmente.
-- ⚪ Feature planejado.
+## Features propostos
+
+- Implementar uma matriz de maior resolução.
+- Implementar telemetria para monitoramento de cada unidade semafórica.
+- Implementar um sistema de áudio com mensagens de voz via alto-falante.
 
 ## Autores
 
